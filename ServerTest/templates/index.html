@@ -1,0 +1,40 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет</title>
+    <link rel="stylesheet" href="resources/css/index.css"/>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Личный кабинет</h1>
+
+        <div class="user-info">
+            <h2>Информация о пользователе</h2>
+            <p><strong>Имя:</strong> {{name}}</p>
+       
+        </div>
+
+        <div class="subscription-info">
+            <h2>Информация о подписке</h2>
+            <p><strong>Тип подписки:</strong> {{status}}</p>
+            <p><strong>Дата окончания:</strong> {{date}}</p>
+        </div>
+
+        <div class="purchased-movies">
+            <h2>Купленные фильмы</h2>
+            <ul>
+               {{for film in films}}
+                <li> {{film.name}} - {{film.price}} </li>
+               {{end}}
+            </ul>
+        </div>
+
+        <a href="выбор_фильмов.html" class="button">Перейти к выбору фильмов</a>
+
+    </div>
+
+</body>
+</html> 
