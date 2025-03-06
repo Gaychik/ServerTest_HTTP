@@ -1,12 +1,15 @@
-﻿using System.Net;
+﻿using ServerTest;
+using System.Net;
+using System.Runtime.CompilerServices;
 
 class Server
 {
     private HttpListener _listener;
-
+    private RouteHandler _routeHandler;
     public Server(string[] prefixes)
     {
         _listener = new HttpListener();
+        _routeHandler = new RouteHandler();
         foreach (string prefix in prefixes)
         {
             _listener.Prefixes.Add(prefix);
@@ -15,7 +18,12 @@ class Server
     public async Task Start()
     { 
          _listener.Start();
-         await  Main();
+        _routeHandler.RegisterRoute("/register",RegisterGet);
+        _routeHandler.RegisterRoute("/login", LoginGet);
+        _routeHandler.RegisterRoute("/", Index);
+        _routeHandler.RegisterRoute("/Error", Error);
+        _routeHandler.RegisterRoute("/css", Get_File_CSS);
+        await  Main();
 
     }
 
@@ -32,43 +40,15 @@ class Server
 
     public async Task ControllerHandlers(HttpListenerContext context)
     {
-        var route = context.Request.Url.AbsolutePath;
-        Console.WriteLine($"Пришел {context.Request.HttpMethod} запрос по маршруту: {route}");
-        var response = "";
-        var type_content = "text/html";
-        if (route == "/register")
-            if (context.Request.HttpMethod == "POST")
-            {
+        var content_type = "text/html";
 
-                await GetDataFromStream(context.Request.InputStream);
-            }
-            else
-            {
-                response = File.ReadAllText("templates/register.html");
-
-            }
-        if (route == "/login")
+        var response = await _routeHandler.HandleRequest(context.Request);
+        if (context.Request.Url.AbsolutePath.Contains("css"))
         {
-            if (context.Request.HttpMethod == "POST")
-            {
-
-            }
-            else
-            {
-                response = File.ReadAllText("templates/login.html");
-
-            }
+            content_type = "text/css";
         }
-        if (route.Contains("css"))
-        {
-         
-            response = File.ReadAllText(route[1..]);
-            type_content="text/css";
-        }
-
-
-        context.Response.ContentType = type_content;
-        await SetDataToStream(context.Response.OutputStream, response);
+        context.Response.ContentType = content_type;
+          await SetDataToStream(context.Response.OutputStream, response);
         context.Response.Close();
     }
 
@@ -85,7 +65,7 @@ class Server
     {
 
         
-        using (var writer = new StreamWriter(output))
+        using (var writer = new StreamWriter(output, System.Text.Encoding.UTF8 ))
         {
             Console.WriteLine("Запись данных в выходной поток...");
              await writer.WriteAsync(response);
@@ -93,13 +73,37 @@ class Server
         }
  
     }
-    private async Task SaveMessage(HttpListenerRequest req)
-    {
 
-       var message_obj = await  GetDataFromStream(req.InputStream);
-        Console.WriteLine (message_obj);
- 
+    private async Task<string> RegisterGet(HttpListenerRequest req)
+    {
+      
+       return  await File.ReadAllTextAsync("templates/register.html");
+
     }
+    private async Task<string> Index(HttpListenerRequest req)
+    {
+        return await File.ReadAllTextAsync("templates/index.html");
+
+    }
+    private async Task<string> LoginGet(HttpListenerRequest req)
+    {
+        return await File.ReadAllTextAsync("templates/login.html");
+
+    }
+    private async Task<string> Error(HttpListenerRequest req)
+    {
+        return "Мы сожалеем, что страница не найдена...";
+
+    }
+
+    private async Task<string> Get_File_CSS(HttpListenerRequest req)
+    {
+        var route = req.Url.AbsolutePath[1..];
+        return await File.ReadAllTextAsync(route);
+
+    }
+    
+
 
 
 
